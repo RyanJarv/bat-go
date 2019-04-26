@@ -106,17 +106,37 @@ func (suite *PostgresTestSuite) TestSaveIssuer() {
 	suite.Assert().NoError(pg.SaveIssuer(&issuer), "Save issuer should succeed")
 }
 
+func (suite *PostgresTestSuite) TestGetIssuer() {
+	// FIXME
+}
+
 func (suite *PostgresTestSuite) TestSaveWallet() {
 	pg, err := NewPostgres("", false)
 	suite.Require().NoError(err)
 
 	publicKey := "hBrtClwIppLmu/qZ8EhGM1TQZUwDUosbOrVu3jMwryY="
 
-	wallet := wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	wallet := &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Assert().NoError(pg.SaveWallet(wallet), "Save wallet should succeed")
 }
 
+func (suite *PostgresTestSuite) TestGetWallet() {
+	pg, err := NewPostgres("", false)
+	suite.Require().NoError(err)
+
+	publicKey := "hBrtClwIppLmu/qZ8EhGM1TQZUwDUosbOrVu3jMwryY="
+	id := uuid.NewV4()
+
+	origWallet := &wallet.Info{ID: id.String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	suite.Assert().NoError(pg.SaveWallet(origWallet), "Save wallet should succeed")
+
+	wallet, err := pg.GetWallet(id)
+	suite.Assert().NoError(err, "Get wallet should succeed")
+	suite.Assert().Equal(origWallet, wallet)
+}
+
 func (suite *PostgresTestSuite) TestCreateClaim() {
+	// TODO
 }
 
 func (suite *PostgresTestSuite) TestClaimForWallet() {
@@ -129,7 +149,7 @@ func (suite *PostgresTestSuite) TestClaimForWallet() {
 	promotion, err := pg.CreatePromotion("ugp", 2, decimal.NewFromFloat(25.0))
 	suite.Require().NoError(err, "Create promotion should succeed")
 
-	w := wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w := &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w), "Save wallet should succeed")
 
 	_, err = pg.ClaimForWallet(promotion, w, blindedCreds)
@@ -142,12 +162,12 @@ func (suite *PostgresTestSuite) TestClaimForWallet() {
 	_, err = pg.ClaimForWallet(promotion, w, blindedCreds)
 	suite.Assert().Error(err, "Claim for wallet should fail, wallet already claimed this promotion")
 
-	w = wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w = &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w), "Save wallet should succeed")
 	_, err = pg.ClaimForWallet(promotion, w, blindedCreds)
 	suite.Assert().NoError(err, "Claim for wallet should succeed, promotion is active and has grants left")
 
-	w = wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w = &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w), "Save wallet should succeed")
 	_, err = pg.ClaimForWallet(promotion, w, blindedCreds)
 	suite.Assert().Error(err, "Claim for wallet should fail, promotion is active but has no more grants")
@@ -156,13 +176,13 @@ func (suite *PostgresTestSuite) TestClaimForWallet() {
 	suite.Require().NoError(err, "Create promotion should succeed")
 	suite.Require().NoError(pg.ActivatePromotion(promotion), "Activate promotion should succeed")
 
-	w = wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w = &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w), "Save wallet should succeed")
 
 	_, err = pg.CreateClaim(promotion.ID, w.ID, decimal.NewFromFloat(30.0))
 	suite.Require().NoError(err, "Creating pre-registered claim should succeed")
 
-	w2 := wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w2 := &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w2), "Save wallet should succeed")
 	_, err = pg.ClaimForWallet(promotion, w2, blindedCreds)
 	suite.Assert().Error(err, "Claim for wallet should fail, wallet does not have pre-registered claim")
@@ -182,7 +202,7 @@ func (suite *PostgresTestSuite) TestGetAvailablePromotionsForWallet() {
 	publicKey := "hBrtClwIppLmu/qZ8EhGM1TQZUwDUosbOrVu3jMwryY="
 	//blindedCreds := JSONStringArray([]string{})
 
-	w := wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w := &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w), "Save wallet should succeed")
 
 	promotions, err := pg.GetAvailablePromotionsForWallet(w)
@@ -236,7 +256,7 @@ func (suite *PostgresTestSuite) TestGetClaimCreds() {
 	promotion, err := pg.CreatePromotion("ugp", 2, decimal.NewFromFloat(25.0))
 	suite.Require().NoError(err, "Create promotion should succeed")
 
-	w := wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
+	w := &wallet.Info{ID: uuid.NewV4().String(), Provider: "uphold", ProviderID: uuid.NewV4().String(), PublicKey: publicKey}
 	suite.Require().NoError(pg.SaveWallet(w), "Save wallet should succeed")
 
 	suite.Require().NoError(pg.ActivatePromotion(promotion), "Activate promotion should succeed")
@@ -248,6 +268,10 @@ func (suite *PostgresTestSuite) TestGetClaimCreds() {
 	suite.Assert().NoError(err, "Get claim creds should succeed")
 
 	suite.Assert().Equal(blindedCreds, claimCreds.BlindedCreds)
+}
+
+func (suite *PostgresTestSuite) TestSaveClaimCreds() {
+	// FIXME
 }
 
 func TestPostgresTestSuite(t *testing.T) {

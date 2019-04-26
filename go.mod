@@ -17,6 +17,7 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-delve/delve v1.2.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.2.5
+	github.com/golang/mock v1.2.0
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/golangci/golangci-lint v1.16.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
@@ -35,6 +36,7 @@ require (
 	github.com/josharian/impl v0.0.0-20180228163738-3d0f908298c4 // indirect
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -44,10 +46,12 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/peterh/liner v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/pkg/profile v1.3.0 // indirect
 	github.com/pressly/lg v1.1.1
 	github.com/prometheus/client_golang v0.9.2
 	github.com/rogpeppe/godef v1.1.1 // indirect
+	github.com/rs/zerolog v1.14.0
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/satori/go.uuid v1.2.0

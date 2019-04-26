@@ -45,5 +45,6 @@ create table claim_creds (
   claim_id uuid primary key not null references claims(id),
   blinded_creds json not null,
   signed_creds json,
-  batch_proof text
+  batch_proof text,
+  public_key text
 );

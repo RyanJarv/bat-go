@@ -19,14 +19,17 @@ import (
 // Datastore abstracts over the underlying datastore
 type Datastore interface {
 	ActivatePromotion(promotion *Promotion) error
-	ClaimForWallet(promotion *Promotion, wallet wallet.Info) (*Claim, error)
+	ClaimForWallet(promotion *Promotion, wallet *wallet.Info, blindedCreds JSONStringArray) (*Claim, error)
 	CreateClaim(promotionID uuid.UUID, walletID string, value decimal.Decimal) (*Claim, error)
 	CreatePromotion(promotionType string, numGrants int, value decimal.Decimal) (*Promotion, error)
-	GetAvailablePromotionsForWallet(wallet wallet.Info) ([]Promotion, error)
+	GetAvailablePromotionsForWallet(wallet *wallet.Info) ([]Promotion, error)
 	GetClaimCreds(claimID uuid.UUID) (*ClaimCreds, error)
+	SaveClaimCreds(claimCreds *ClaimCreds) error
 	GetPromotion(promotionID uuid.UUID) (*Promotion, error)
 	SaveIssuer(issuer *Issuer) error
-	SaveWallet(wallet wallet.Info) error
+	GetIssuer(promotionID uuid.UUID, cohort string) (*Issuer, error)
+	SaveWallet(wallet *wallet.Info) error
+	GetWallet(id uuid.UUID) (*wallet.Info, error)
 }
 
 // Postgres is a WIP Datastore
@@ -135,7 +138,22 @@ func (pg *Postgres) SaveIssuer(issuer *Issuer) error {
 	return nil
 }
 
-func (pg *Postgres) SaveWallet(wallet wallet.Info) error {
+func (pg *Postgres) GetIssuer(promotionID uuid.UUID, cohort string) (*Issuer, error) {
+	statement := "select * from issuers where promotion_id = $1 and cohort = $2"
+	issuers := []Issuer{}
+	err := pg.DB.Select(&issuers, statement, promotionID.String(), cohort)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(issuers) > 0 {
+		return &issuers[0], nil
+	} else {
+		return nil, nil
+	}
+}
+
+func (pg *Postgres) SaveWallet(wallet *wallet.Info) error {
 	statement := `
 	insert into wallets (id, provider, provider_id, public_key)
 	values ($1, $2, $3, $4)
@@ -146,6 +164,21 @@ func (pg *Postgres) SaveWallet(wallet wallet.Info) error {
 	}
 
 	return nil
+}
+
+func (pg *Postgres) GetWallet(ID uuid.UUID) (*wallet.Info, error) {
+	statement := "select * from wallets where id = $1"
+	wallets := []wallet.Info{}
+	err := pg.DB.Select(&wallets, statement, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(wallets) > 0 {
+		return &wallets[0], nil
+	} else {
+		return nil, nil
+	}
 }
 
 func (pg *Postgres) CreateClaim(promotionID uuid.UUID, walletID string, value decimal.Decimal) (*Claim, error) {
@@ -162,7 +195,7 @@ func (pg *Postgres) CreateClaim(promotionID uuid.UUID, walletID string, value de
 	return &claims[0], nil
 }
 
-func (pg *Postgres) ClaimForWallet(promotion *Promotion, wallet wallet.Info, blindedCreds JSONStringArray) (*Claim, error) {
+func (pg *Postgres) ClaimForWallet(promotion *Promotion, wallet *wallet.Info, blindedCreds JSONStringArray) (*Claim, error) {
 	blindedCredsJSON, err := json.Marshal(blindedCreds)
 	if err != nil {
 		return nil, err
@@ -228,7 +261,7 @@ func (pg *Postgres) ClaimForWallet(promotion *Promotion, wallet wallet.Info, bli
 	return &claim, nil
 }
 
-func (pg *Postgres) GetAvailablePromotionsForWallet(wallet wallet.Info) ([]Promotion, error) {
+func (pg *Postgres) GetAvailablePromotionsForWallet(wallet *wallet.Info) ([]Promotion, error) {
 	statement := `
 	select 
 		promotions.*, 
@@ -259,4 +292,9 @@ func (pg *Postgres) GetClaimCreds(claimID uuid.UUID) (*ClaimCreds, error) {
 	} else {
 		return nil, nil
 	}
+}
+
+func (pg *Postgres) SaveClaimCreds(creds *ClaimCreds) error {
+	_, err := pg.DB.Exec(`update claim_creds set signed_creds = $1, batch_proof = $2, public_key = $3 where claim_id = $4`, creds.SignedCreds, creds.BatchProof, creds.PublicKey, creds.ID)
+	return err
 }
